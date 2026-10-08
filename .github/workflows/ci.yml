@@ -26,19 +26,6 @@ jobs:
 
   backend-test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: ats_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -50,9 +37,7 @@ jobs:
           pip install -r requirements.txt pytest pytest-asyncio httpx
           playwright install chromium --with-deps
       - name: Run tests
-        env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/ats_test
-          SECRET_KEY: test-secret
+        # Tests cover pure services only — no Firestore or Firebase credentials needed
         run: cd backend && pytest tests/ -v
 
   frontend-lint:

@@ -2,11 +2,13 @@
 Pydantic schemas for all API request/response models.
 """
 from __future__ import annotations
-from typing import Optional, List, Any
-from uuid import UUID
-from datetime import datetime
-from pydantic import BaseModel, EmailStr, field_validator
+
 import enum
+from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, EmailStr
 
 
 # ─────────────────────── Enums ────────────────────────
@@ -19,13 +21,8 @@ class SectionTypeEnum(str, enum.Enum):
 
 
 # ─────────────────────── Auth ────────────────────────
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str
-
-
 class UserOut(BaseModel):
-    id: UUID
+    id: str  # Firebase Auth UID
     email: EmailStr
     created_at: datetime
 
@@ -33,20 +30,15 @@ class UserOut(BaseModel):
         from_attributes = True
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
-
 # ─────────────────────── Contact ────────────────────────
 class ContactInfoCreate(BaseModel):
     full_name: str
     email: EmailStr
-    phone: Optional[str] = None
-    city: Optional[str] = None
-    linkedin: Optional[str] = None
-    github: Optional[str] = None
-    portfolio: Optional[str] = None
+    phone: str | None = None
+    city: str | None = None
+    linkedin: str | None = None
+    github: str | None = None
+    portfolio: str | None = None
 
 
 class ContactInfoOut(ContactInfoCreate):
@@ -65,25 +57,25 @@ class BulletCreate(BaseModel):
 
 class BulletImproveRequest(BaseModel):
     raw_text: str
-    context: Optional[str] = None  # role/company/project name for context
+    context: str | None = None  # role/company/project name for context
 
 
 class BulletImproveResponse(BaseModel):
-    improved_text: Optional[str]
+    improved_text: str | None
     has_metric: bool
     needs_metric_prompt: bool
-    metric_question: Optional[str]
-    flags: List[str]  # passive voice, filler words, etc.
+    metric_question: str | None
+    flags: list[str]  # passive voice, filler words, etc.
 
 
 class BulletOut(BaseModel):
     id: UUID
     raw_text: str
-    improved_text: Optional[str]
+    improved_text: str | None
     has_metric: bool
     order_index: int
     needs_metric_prompt: bool
-    metric_question: Optional[str]
+    metric_question: str | None
 
     class Config:
         from_attributes = True
@@ -93,14 +85,14 @@ class BulletOut(BaseModel):
 class ResumeEntryCreate(BaseModel):
     order_index: int = 0
     payload: dict  # type-specific structured fields
-    bullets: List[BulletCreate] = []
+    bullets: list[BulletCreate] = []
 
 
 class ResumeEntryOut(BaseModel):
     id: UUID
     order_index: int
     payload: dict
-    bullets: List[BulletOut] = []
+    bullets: list[BulletOut] = []
 
     class Config:
         from_attributes = True
@@ -110,14 +102,14 @@ class ResumeEntryOut(BaseModel):
 class ResumeSectionCreate(BaseModel):
     type: SectionTypeEnum
     order_index: int
-    entries: List[ResumeEntryCreate] = []
+    entries: list[ResumeEntryCreate] = []
 
 
 class ResumeSectionOut(BaseModel):
     id: UUID
     type: SectionTypeEnum
     order_index: int
-    entries: List[ResumeEntryOut] = []
+    entries: list[ResumeEntryOut] = []
 
     class Config:
         from_attributes = True
@@ -127,27 +119,31 @@ class ResumeSectionOut(BaseModel):
 class ResumeCreate(BaseModel):
     title: str
     contact: ContactInfoCreate
-    sections: List[ResumeSectionCreate] = []
+    sections: list[ResumeSectionCreate] = []
 
 
 class ResumeUpdate(BaseModel):
-    title: Optional[str] = None
-    contact: Optional[ContactInfoCreate] = None
-    sections: Optional[List[ResumeSectionCreate]] = None
+    title: str | None = None
+    contact: ContactInfoCreate | None = None
+    sections: list[ResumeSectionCreate] | None = None
 
 
 class ResumeOut(BaseModel):
     id: UUID
-    user_id: UUID
+    user_id: str  # Firebase Auth UID
     title: str
     created_at: datetime
     updated_at: datetime
-    is_tailored_copy_of: Optional[UUID]
-    contact: Optional[ContactInfoOut]
-    sections: List[ResumeSectionOut] = []
+    is_tailored_copy_of: UUID | None
+    contact: ContactInfoOut | None
+    sections: list[ResumeSectionOut] = []
 
     class Config:
         from_attributes = True
+
+
+class RenameTitleRequest(BaseModel):
+    title: str
 
 
 class ResumeSummary(BaseModel):
@@ -155,7 +151,7 @@ class ResumeSummary(BaseModel):
     title: str
     created_at: datetime
     updated_at: datetime
-    is_tailored_copy_of: Optional[UUID]
+    is_tailored_copy_of: UUID | None
 
     class Config:
         from_attributes = True
@@ -170,7 +166,7 @@ class JobDescriptionOut(BaseModel):
     id: UUID
     resume_id: UUID
     raw_text: str
-    extracted_keywords: Optional[Any]
+    extracted_keywords: Any | None
     created_at: datetime
 
     class Config:
@@ -179,7 +175,7 @@ class JobDescriptionOut(BaseModel):
 
 # ─────────────────────── Score ────────────────────────
 class ScoreRequest(BaseModel):
-    jd_text: Optional[str] = None  # if None, keyword_score = 0
+    jd_text: str | None = None  # if None, keyword_score = 0
 
 
 class ScoreBreakdownItem(BaseModel):
@@ -187,20 +183,20 @@ class ScoreBreakdownItem(BaseModel):
     weight: float
     weighted: float
     explanation: str
-    items: List[str] = []  # per-issue details
+    items: list[str] = []  # per-issue details
 
 
 class ScoreOut(BaseModel):
     id: UUID
     resume_id: UUID
-    jd_id: Optional[UUID]
+    jd_id: UUID | None
     parse_score: float
     keyword_score: float
     bullet_score: float
     completeness_score: float
     formatting_score: float
     total_score: float
-    breakdown: Optional[Any]
+    breakdown: Any | None
     computed_at: datetime
     disclaimer: str = (
         "This score is a proxy for ATS parseability and keyword alignment. "
@@ -220,21 +216,36 @@ class RenderRequest(BaseModel):
 # ─────────────────────── Tailor ────────────────────────
 class TailorRequest(BaseModel):
     jd_text: str
-    resume_title: Optional[str] = None
+    resume_title: str | None = None
 
 
 class TailorOut(BaseModel):
     tailored_resume_id: UUID
-    keywords_matched: List[str]
-    keywords_missing: List[str]
-    suggestions: List[str]
+    keywords_matched: list[str]
+    keywords_missing: list[str]
+    suggestions: list[str]
 
 
 # ─────────────────────── Parse Check ────────────────────────
 class ParseCheckResult(BaseModel):
     passed: bool
-    sections_found: List[str]
-    sections_missing: List[str]
+    sections_found: list[str]
+    sections_missing: list[str]
     order_correct: bool
-    issues: List[str]
+    issues: list[str]
     accuracy: float  # 0.0–1.0
+
+
+# ─────────────────────── Cover Letter ────────────────────────
+class CoverLetterRequest(BaseModel):
+    jd_text: str
+    company_name: str | None = None
+
+
+class CoverLetterOut(BaseModel):
+    id: str
+    resume_id: str
+    cover_letter: str
+    jd_text: str
+    company_name: str | None
+    created_at: str

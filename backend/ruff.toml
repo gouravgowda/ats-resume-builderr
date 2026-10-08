@@ -1,0 +1,12 @@
+# Ruff configuration for the FastAPI backend.
+# CI runs: ruff check app/
+
+[lint]
+# Keep the broad default set that CI uses, minus patterns that are
+# intentional in this codebase:
+ignore = [
+    "B008",   # Depends()/File() inside defaults is the standard FastAPI idiom
+    "BLE001", # deliberate broad excepts: auth verification, LLM fallbacks, best-effort lookups
+    "DTZ003", # datetime.utcnow() keeps ISO strings naive+UTC (sorted lexicographically)
+    "DTZ901", # datetime.min sort fallback is intentionally naive to match
+]

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { scoreApi, parseCheckApi, renderApi, downloadBlob, tailorApi } from "@/lib/api";
+import { useRequireAuth } from "@/lib/auth";
 import { AppNav } from "@/app/dashboard/page";
 import Link from "next/link";
 
@@ -44,10 +45,21 @@ interface ParseCheckData {
   accuracy: number;
 }
 
+interface ScoreHistoryItem {
+  id: string;
+  total_score: number;
+  parse_score: number;
+  keyword_score: number;
+  bullet_score: number;
+  completeness_score: number;
+  formatting_score: number;
+  computed_at: string;
+}
+
 export default function ScorePage() {
   const params = useParams();
-  const router = useRouter();
   const resumeId = params.resumeId as string;
+  useRequireAuth();
 
   const [jdText, setJdText] = useState("");
   const [scoring, setScoring] = useState(false);
@@ -58,11 +70,16 @@ export default function ScorePage() {
   const [tailoring, setTailoring] = useState(false);
   const [tailorResult, setTailorResult] = useState<{ matched: string[]; missing: string[]; suggestions: string[]; tailoredId: string } | null>(null);
   const [error, setError] = useState("");
+  const [history, setHistory] = useState<ScoreHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("ats_token");
-    if (!token) router.push("/auth/login");
-  }, [router]);
+    scoreApi
+      .history(resumeId)
+      .then((res) => setHistory(res.data))
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false));
+  }, [resumeId, score]);
 
   async function handleParseCheck() {
     setParseRunning(true);
@@ -491,6 +508,110 @@ export default function ScorePage() {
             )}
           </div>
         )}
+
+        {/* ── Score History ── */}
+        <div className="card" style={{ marginBottom: "1.5rem" }}>
+          <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.25rem" }}>Score history</h2>
+          <p style={{ fontSize: "0.825rem", color: "var(--text-secondary)", marginBottom: "1rem" }}>
+            Previous scoring results for this resume, most recent first.
+          </p>
+
+          {historyLoading ? (
+            <p style={{ fontSize: "0.825rem", color: "var(--text-muted)" }}>Loading history…</p>
+          ) : history.length === 0 ? (
+            <p style={{ fontSize: "0.825rem", color: "var(--text-muted)" }}>No previous scores</p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "0.825rem",
+                }}
+              >
+                <thead>
+                  <tr>
+                    {["Date", "Total", "Parse", "Keywords", "Bullets", "Completeness", "Formatting"].map((col) => (
+                      <th
+                        key={col}
+                        style={{
+                          textAlign: col === "Date" ? "left" : "right",
+                          padding: "0.5rem 0.625rem",
+                          borderBottom: "1px solid var(--bg-border)",
+                          color: "var(--text-muted)",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((item) => {
+                    const totalPctH = Math.round(item.total_score * 100);
+                    const badgeColor =
+                      totalPctH >= 70
+                        ? "var(--success)"
+                        : totalPctH >= 40
+                          ? "var(--warning)"
+                          : "var(--error)";
+                    return (
+                      <tr key={item.id} style={{ borderBottom: "1px solid var(--bg-border)" }}>
+                        <td style={{ padding: "0.5rem 0.625rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                          {new Date(item.computed_at).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td style={{ padding: "0.5rem 0.625rem", textAlign: "right" }}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "0.15rem 0.5rem",
+                              borderRadius: 4,
+                              fontWeight: 700,
+                              color: badgeColor,
+                              background: `${badgeColor}18`,
+                              fontSize: "0.825rem",
+                            }}
+                          >
+                            {totalPctH}%
+                          </span>
+                        </td>
+                        {[
+                          item.parse_score,
+                          item.keyword_score,
+                          item.bullet_score,
+                          item.completeness_score,
+                          item.formatting_score,
+                        ].map((val, i) => (
+                          <td
+                            key={i}
+                            style={{
+                              padding: "0.5rem 0.625rem",
+                              textAlign: "right",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            {Math.round(val * 100)}%
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

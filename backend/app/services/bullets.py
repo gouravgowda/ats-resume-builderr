@@ -8,8 +8,9 @@ Rules (PRD 6.2):
 """
 import json
 import re
-from typing import Optional
+
 from groq import AsyncGroq
+
 from app.config import settings
 from app.schemas import BulletImproveResponse
 
@@ -90,7 +91,7 @@ Rules you MUST follow:
 Context about the role/project may be provided to help you understand the domain."""
 
 
-async def improve_bullet(raw_text: str, context: Optional[str] = None) -> BulletImproveResponse:
+async def improve_bullet(raw_text: str, context: str | None = None) -> BulletImproveResponse:
     if not settings.GROQ_API_KEY:
         # Fallback without API key: return flags only
         flags = detect_flags(raw_text)
@@ -123,7 +124,7 @@ async def improve_bullet(raw_text: str, context: Optional[str] = None) -> Bullet
                 {"role": "user", "content": user_message},
             ],
         )
-        improved = response.choices[0].message.content.strip()
+        improved = (response.choices[0].message.content or "").strip()
 
         # Some models wrap the answer in JSON despite instructions — unwrap it
         if improved.startswith("{"):
@@ -161,7 +162,7 @@ async def improve_bullet(raw_text: str, context: Optional[str] = None) -> Bullet
         )
 
     except Exception as e:
-        flags.append(f"AI improvement failed: {str(e)}")
+        flags.append(f"AI improvement failed: {e!s}")
         return BulletImproveResponse(
             improved_text=None,
             has_metric=metric_present,

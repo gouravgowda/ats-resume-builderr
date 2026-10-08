@@ -1,12 +1,12 @@
-// @ts-nocheck
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray, UseFormRegister, Control } from "react-hook-form";
+import { useForm, useFieldArray, UseFormRegister, Control, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { resumeApi, bulletApi } from "@/lib/api";
+import { useRequireAuth } from "@/lib/auth";
 import { AppNav } from "@/app/dashboard/page";
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
@@ -111,6 +111,7 @@ const STEPS = [
 
 export default function NewResumeBuilder() {
   const router = useRouter();
+  const { loading: authLoading } = useRequireAuth();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -122,7 +123,7 @@ export default function NewResumeBuilder() {
     watch,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as unknown as Resolver<FormData>,
     defaultValues: {
       title: "",
       contact: { full_name: "", email: "" },
@@ -209,6 +210,18 @@ export default function NewResumeBuilder() {
   };
 
   const totalSteps = STEPS.length;
+
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--bg-base)" }}>
+        <AppNav />
+        <div className="container" style={{ padding: "3rem 1.5rem" }}>
+          <div className="skeleton" style={{ height: "40px", width: "300px", marginBottom: "1rem" }} />
+          <div className="skeleton" style={{ height: "400px" }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-base)" }}>
@@ -627,7 +640,7 @@ function BulletsField({
               className="form-input"
               style={{ minHeight: "56px", flex: 1, resize: "vertical", fontSize: "0.85rem" }}
               placeholder="Describe what you did, how, and what was measured."
-              {...(register as UseFormRegister<Record<string, unknown>>)(`${nestPath}.${i}.raw_text` as never)}
+              {...(register as unknown as UseFormRegister<Record<string, unknown>>)(`${nestPath}.${i}.raw_text` as never)}
             />
             <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", flexShrink: 0 }}>
               <button

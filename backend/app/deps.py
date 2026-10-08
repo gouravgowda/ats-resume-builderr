@@ -1,26 +1,28 @@
 """
 Dependency injection helpers.
+Verifies Firebase ID tokens sent by the frontend as Bearer tokens.
 """
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
-from app.config import settings
+import asyncio
 
-bearer = HTTPBearer()
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from app.firebase import verify_id_token
+
+bearer = HTTPBearer(auto_error=False)  # missing header → our own 401 below
 
 
 async def get_current_user_id(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
 ) -> str:
+    """Return the Firebase UID for the request, or 401."""
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Not authenticated.")
     try:
-        payload = jwt.decode(
-            credentials.credentials,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-        )
-        user_id: str = payload.get("sub")
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token.")
-        return user_id
-    except JWTError:
+        # firebase-admin verification is synchronous; keep the event loop free
+        uid = await asyncio.to_thread(verify_id_token, credentials.credentials)
+        if not uid:
+            raise ValueError("No uid in token.")
+        return uid
+    except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired token.")

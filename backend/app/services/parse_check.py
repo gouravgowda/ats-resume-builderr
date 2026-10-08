@@ -5,8 +5,9 @@ and diff against the original structured input.
 This is the core technical differentiator.
 """
 import re
-from typing import Any
+
 import fitz  # PyMuPDF
+
 from app.schemas import ParseCheckResult, ResumeOut
 
 EXPECTED_SECTIONS = {

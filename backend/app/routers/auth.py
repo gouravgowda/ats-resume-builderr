@@ -1,54 +1,27 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.database import get_db
-from app.models import User
-from app.schemas import UserCreate, UserOut, Token
-from app.config import settings
-import bcrypt
-import uuid
-from datetime import datetime, timedelta
-from jose import jwt
+"""
+Auth router — Firebase Auth handles register/login in the frontend.
+This router only manages the user's profile document in Firestore.
+"""
+from fastapi import APIRouter, Depends
+
+from app.deps import get_current_user_id
+from app.firebase import get_or_create_user_profile
+from app.schemas import UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8")[:72], bcrypt.gensalt()).decode("utf-8")
-
-
-def verify_password(plain: str, hashed: str) -> bool:
-    try:
-        return bcrypt.checkpw(plain.encode("utf-8")[:72], hashed.encode("utf-8"))
-    except ValueError:
-        return False
-
-
-def create_token(user_id: str) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return jwt.encode(
-        {"sub": user_id, "exp": expire},
-        settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM,
+@router.get("/me", response_model=UserOut)
+async def get_me(user_id: str = Depends(get_current_user_id)):
+    """
+    Create (on first call) or fetch the signed-in user's profile.
+    The frontend calls this right after Firebase register/login.
+    """
+    profile = await get_or_create_user_profile(user_id)
+    return UserOut.model_validate(
+        {
+            "id": profile["id"],
+            "email": profile.get("email") or "unknown@firebase.local",
+            "created_at": profile.get("created_at"),
+        }
     )
-
-
-@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.email == data.email))
-    if result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email already registered.")
-    user = User(email=data.email, hashed_password=hash_password(data.password))
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return user
-
-
-@router.post("/login", response_model=Token)
-async def login(data: UserCreate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.email == data.email))
-    user = result.scalar_one_or_none()
-    if not user or not verify_password(data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials.")
-    return {"access_token": create_token(str(user.id))}

@@ -1,26 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { resumeApi } from "@/lib/api";
+import { useRequireAuth } from "@/lib/auth";
 import { AppNav } from "@/app/dashboard/page";
 import Link from "next/link";
 
 export default function EditResumePage() {
   const params = useParams();
-  const router = useRouter();
   const resumeId = params.resumeId as string;
+  const { user, loading: authLoading } = useRequireAuth();
   const [loading, setLoading] = useState(true);
   const [resume, setResume] = useState<Record<string, unknown> | null>(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem("ats_token");
-    if (!token) {
-      router.push("/auth/login");
-      return;
-    }
-    loadResume();
-  }, [resumeId, router]);
 
   async function loadResume() {
     try {
@@ -31,7 +23,12 @@ export default function EditResumePage() {
     }
   }
 
-  if (loading) {
+  useEffect(() => {
+    if (user) loadResume();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeId, user]);
+
+  if (authLoading || loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--bg-base)" }}>
         <AppNav />

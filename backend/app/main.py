@@ -3,14 +3,24 @@ FastAPI application entrypoint.
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.config import settings
-from app.database import engine, Base
-from app.routers import auth, resumes, bullets, render, parse_check, score, tailor
+from app.firebase import init_firebase
+from app.routers import (
+    auth,
+    bullets,
+    cover_letter,
+    parse_check,
+    render,
+    resumes,
+    score,
+    tailor,
+)
 
 app = FastAPI(
     title="ATS Resume Builder API",
     description="Generates ATS-parseable PDF resumes and checks them against a job description.",
-    version="1.0.0",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -29,14 +39,16 @@ app.include_router(render.router)
 app.include_router(parse_check.router)
 app.include_router(score.router)
 app.include_router(tailor.router)
+app.include_router(cover_letter.router)
 
 
 @app.on_event("startup")
 async def startup():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Firebase Admin (ID tokens + Firestore). Data now lives in Firestore —
+    # no SQL tables to create.
+    init_firebase()
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "ok", "version": "2.0.0"}

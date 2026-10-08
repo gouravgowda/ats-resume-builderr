@@ -4,7 +4,7 @@ Extracts keywords from a JD, finds overlap with resume, suggests improvements.
 Never fabricates skills.
 """
 import re
-from typing import Optional
+
 from app.schemas import ResumeOut
 
 # Common tech keywords to look for (extendable)
@@ -29,8 +29,8 @@ SOFT_TERMS = re.compile(
 
 def extract_keywords(jd_text: str) -> list[str]:
     """Extract skill keywords from a job description."""
-    tech_matches = set(m.group(0) for m in TECH_TERMS.finditer(jd_text))
-    soft_matches = set(m.group(0) for m in SOFT_TERMS.finditer(jd_text))
+    tech_matches = {m.group(0) for m in TECH_TERMS.finditer(jd_text)}
+    soft_matches = {m.group(0) for m in SOFT_TERMS.finditer(jd_text)}
     return sorted(tech_matches | soft_matches)
 
 

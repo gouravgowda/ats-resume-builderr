@@ -8,11 +8,9 @@ Component weights:
   Formatting:            10%
 """
 import re
-from typing import Optional
-from app.schemas import ResumeOut, ScoreOut, ScoreBreakdownItem
+
+from app.schemas import ResumeOut
 from app.services.parse_check import ParseCheckResult
-import uuid
-from datetime import datetime
 
 # ─── Action verbs (strong openers) ──────────────────────────────────────────
 ACTION_VERBS = {
@@ -41,7 +39,7 @@ BANNED_COPY = {
 
 def score_bullets(resume: ResumeOut) -> tuple[float, list[str]]:
     """Score bullets on: action verb start, length, metric presence, no fillers."""
-    all_bullets = []
+    all_bullets: list[str] = []
     for section in resume.sections:
         for entry in section.entries:
             for bullet in entry.bullets:
@@ -54,9 +52,9 @@ def score_bullets(resume: ResumeOut) -> tuple[float, list[str]]:
     issues = []
     total_score = 0.0
 
-    for bullet in all_bullets:
+    for text in all_bullets:
         b_score = 0.0
-        words = bullet.strip().split()
+        words = text.strip().split()
         if not words:
             continue
 
@@ -65,26 +63,26 @@ def score_bullets(resume: ResumeOut) -> tuple[float, list[str]]:
         if first_word in ACTION_VERBS:
             b_score += 0.33
         else:
-            issues.append(f"Bullet does not start with a strong action verb: '{bullet[:60]}...'")
+            issues.append(f"Bullet does not start with a strong action verb: '{text[:60]}...'")
 
         # Length check 12–25 words (33%)
         word_count = len(words)
         if 12 <= word_count <= 25:
             b_score += 0.34
         elif word_count < 12:
-            issues.append(f"Bullet too short ({word_count} words): '{bullet[:60]}'")
+            issues.append(f"Bullet too short ({word_count} words): '{text[:60]}'")
         else:
-            issues.append(f"Bullet too long ({word_count} words): '{bullet[:60]}'")
+            issues.append(f"Bullet too long ({word_count} words): '{text[:60]}'")
 
         # Metric check (34%)
-        if METRIC_PATTERN.search(bullet):
+        if METRIC_PATTERN.search(text):
             b_score += 0.33
         else:
-            issues.append(f"No measurable metric found: '{bullet[:60]}'")
+            issues.append(f"No measurable metric found: '{text[:60]}'")
 
         # Filler penalty
         for fw in FILLER_WORDS:
-            if fw in bullet.lower():
+            if fw in text.lower():
                 b_score = max(0.0, b_score - 0.1)
                 issues.append(f"Filler word '{fw}' found in bullet.")
 
@@ -108,7 +106,6 @@ def score_completeness(resume: ResumeOut) -> tuple[float, list[str]]:
     else:
         issues.append("No contact info present.")
 
-    has_experience = any(s.type.value in ("experience", "project") for s in resume.sections)
     has_experience_entries = any(
         s.type.value in ("experience", "project") and len(s.entries) > 0
         for s in resume.sections
@@ -163,7 +160,7 @@ def score_formatting(resume: ResumeOut) -> tuple[float, list[str]]:
     return max(0.0, score), issues
 
 
-def score_keywords(resume: ResumeOut, jd_keywords: Optional[list[str]]) -> tuple[float, list[str], list[str], list[str]]:
+def score_keywords(resume: ResumeOut, jd_keywords: list[str] | None) -> tuple[float, list[str], list[str], list[str]]:
     """Score keyword match against JD. Returns score, issues, matched, missing."""
     if not jd_keywords:
         return 0.0, ["No job description provided - keyword score not computed."], [], []
@@ -200,8 +197,8 @@ def score_keywords(resume: ResumeOut, jd_keywords: Optional[list[str]]) -> tuple
 
 def compute_score(
     resume: ResumeOut,
-    parse_result: Optional[ParseCheckResult] = None,
-    jd_keywords: Optional[list[str]] = None,
+    parse_result: ParseCheckResult | None = None,
+    jd_keywords: list[str] | None = None,
 ) -> dict:
     """
     Run all scoring components and return a complete score dict.

@@ -3,10 +3,10 @@ PDF rendering service using Playwright.
 Generates real selectable-text PDFs — never image-based.
 ATS-safety rules are baked into the HTML template.
 """
-import asyncio
 from pathlib import Path
-from typing import Optional
+
 from playwright.async_api import async_playwright
+
 from app.schemas import ResumeOut
 
 TEMPLATE_DIR = Path(__file__).parent.parent / "templates"

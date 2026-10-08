@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { authApi } from "@/lib/api";
 
 const schema = z.object({
@@ -26,12 +28,14 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     setServerError("");
     try {
-      const res = await authApi.login(data.email, data.password);
-      localStorage.setItem("ats_token", res.data.access_token);
+      // Sign in with Firebase Auth (email + password)
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      // Best effort: make sure the profile document exists in Firestore
+      await authApi.me().catch(() => undefined);
       router.push("/dashboard");
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } } };
-      setServerError(e.response?.data?.detail || "Login failed. Check your credentials.");
+      const e = err as { code?: string; message?: string };
+      setServerError(firebaseErrorMessage(e));
     }
   };
 
@@ -83,6 +87,22 @@ export default function LoginPage() {
   );
 }
 
+/** Map Firebase auth error codes to friendly messages. */
+function firebaseErrorMessage(err: { code?: string; message?: string }): string {
+  switch (err.code) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Invalid credentials. Check your email and password.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Try again later.";
+    case "auth/invalid-email":
+      return "Enter a valid email address.";
+    default:
+      return err.message || "Login failed. Check your credentials.";
+  }
+}
+
 function AuthLayout({
   title,
   subtitle,
@@ -107,11 +127,11 @@ function AuthLayout({
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
             <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="28" height="28" rx="6" fill="#1a2236" stroke="#2dd4bf" strokeWidth="1.5"/>
-              <rect x="7" y="5" width="18" height="22" rx="2" fill="#111827" stroke="#1e2d45" strokeWidth="1"/>
-              <line x1="10" y1="10" x2="22" y2="10" stroke="#2dd4bf" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="10" y1="13.5" x2="22" y2="13.5" stroke="#64748b" strokeWidth="1" strokeLinecap="round"/>
-              <line x1="10" y1="17" x2="18" y2="17" stroke="#64748b" strokeWidth="1" strokeLinecap="round"/>
+              <rect x="2" y="2" width="28" height="28" rx="6" fill="#0078D4"/>
+              <rect x="7" y="5" width="18" height="22" rx="2" fill="#ffffff"/>
+              <line x1="10" y1="10" x2="22" y2="10" stroke="#eca20a" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="10" y1="13.5" x2="22" y2="13.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round"/>
+              <line x1="10" y1="17" x2="18" y2="17" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round"/>
             </svg>
             <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>ATS Builder</span>
           </Link>

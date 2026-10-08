@@ -3,15 +3,18 @@ DOCX export service using python-docx.
 Generates ATS-safe .docx from structured resume data.
 """
 import io
+
 from docx import Document
-from docx.shared import Pt, Inches, RGBColor
+from docx.document import Document as DocxDocument
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Inches, Pt
+
 from app.schemas import ResumeOut
 
 
-def add_horizontal_rule(doc: Document):
+def add_horizontal_rule(doc: DocxDocument):
     """Add a simple bottom border to simulate a horizontal rule."""
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(0)
@@ -27,7 +30,7 @@ def add_horizontal_rule(doc: Document):
     pPr.append(pBdr)
 
 
-def add_section_heading(doc: Document, text: str):
+def add_section_heading(doc: DocxDocument, text: str):
     """Add an ATS-safe section heading (no tables, no text boxes)."""
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(8)
