@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray, UseFormRegister, Control, Resolver } from "react-hook-form";
+import { useForm, useFieldArray, UseFormRegister, UseFormWatch, Control, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { resumeApi, bulletApi } from "@/lib/api";
@@ -115,12 +115,15 @@ export default function NewResumeBuilder() {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [draftResumeId, setDraftResumeId] = useState<string | null>(null);
+  const draftPromiseRef = useRef<Promise<string> | null>(null);
 
   const {
     register,
     control,
     handleSubmit,
     watch,
+    getValues,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema) as unknown as Resolver<FormData>,
@@ -140,68 +143,94 @@ export default function NewResumeBuilder() {
   const projFields = useFieldArray({ control, name: "projects" });
   const achFields = useFieldArray({ control, name: "achievements" });
 
+  const buildPayload = (data: FormData) => {
+    const sections = [];
+    let idx = 0;
+
+    if (data.education.length > 0) {
+      sections.push({
+        type: "education",
+        order_index: idx++,
+        entries: data.education.map((e, i) => ({ ...e, order_index: i })),
+      });
+    }
+    if (data.experience.length > 0) {
+      sections.push({
+        type: "experience",
+        order_index: idx++,
+        entries: data.experience.map((e, i) => ({ ...e, order_index: i })),
+      });
+    }
+    if (data.projects.length > 0) {
+      sections.push({
+        type: "project",
+        order_index: idx++,
+        entries: data.projects.map((e, i) => ({ ...e, order_index: i })),
+      });
+    }
+
+    const skillGroups: Record<string, string> = {};
+    if (data.skills.languages) skillGroups["Languages"] = data.skills.languages;
+    if (data.skills.frameworks) skillGroups["Frameworks"] = data.skills.frameworks;
+    if (data.skills.tools) skillGroups["Tools"] = data.skills.tools;
+    if (data.skills.databases) skillGroups["Databases"] = data.skills.databases;
+    if (data.skills.other) skillGroups["Other"] = data.skills.other;
+    if (Object.keys(skillGroups).length > 0) {
+      sections.push({
+        type: "skill",
+        order_index: idx++,
+        entries: [{ payload: { groups: skillGroups }, order_index: 0, bullets: [] }],
+      });
+    }
+
+    if (data.achievements.length > 0) {
+      sections.push({
+        type: "achievement",
+        order_index: idx++,
+        entries: data.achievements.map((e, i) => ({ ...e, order_index: i })),
+      });
+    }
+
+    return {
+      title: data.title,
+      contact: data.contact,
+      sections,
+    };
+  };
+
+  // The AI improve endpoint requires a saved resume, so the first click
+  // creates a draft (title may still be empty) and later clicks reuse it.
+  const ensureDraftResume = (): Promise<string> => {
+    if (draftResumeId) return Promise.resolve(draftResumeId);
+    if (!draftPromiseRef.current) {
+      const payload = buildPayload(getValues());
+      if (!payload.title.trim()) payload.title = "Untitled resume";
+      draftPromiseRef.current = resumeApi
+        .create(payload)
+        .then((res) => {
+          setDraftResumeId(res.data.id);
+          return res.data.id as string;
+        })
+        .catch((err: unknown) => {
+          draftPromiseRef.current = null;
+          throw err;
+        });
+    }
+    return draftPromiseRef.current;
+  };
+
   const onSubmit = async (data: FormData) => {
     setSaving(true);
     setError("");
     try {
-      // Build sections array
-      const sections = [];
-      let idx = 0;
-
-      if (data.education.length > 0) {
-        sections.push({
-          type: "education",
-          order_index: idx++,
-          entries: data.education.map((e, i) => ({ ...e, order_index: i })),
-        });
+      const payload = buildPayload(data);
+      if (draftResumeId) {
+        await resumeApi.updateSections(draftResumeId, payload);
+        router.push(`/builder/${draftResumeId}/score`);
+      } else {
+        const res = await resumeApi.create(payload);
+        router.push(`/builder/${res.data.id}/score`);
       }
-      if (data.experience.length > 0) {
-        sections.push({
-          type: "experience",
-          order_index: idx++,
-          entries: data.experience.map((e, i) => ({ ...e, order_index: i })),
-        });
-      }
-      if (data.projects.length > 0) {
-        sections.push({
-          type: "project",
-          order_index: idx++,
-          entries: data.projects.map((e, i) => ({ ...e, order_index: i })),
-        });
-      }
-
-      // Build skills
-      const skillGroups: Record<string, string> = {};
-      if (data.skills.languages) skillGroups["Languages"] = data.skills.languages;
-      if (data.skills.frameworks) skillGroups["Frameworks"] = data.skills.frameworks;
-      if (data.skills.tools) skillGroups["Tools"] = data.skills.tools;
-      if (data.skills.databases) skillGroups["Databases"] = data.skills.databases;
-      if (data.skills.other) skillGroups["Other"] = data.skills.other;
-      if (Object.keys(skillGroups).length > 0) {
-        sections.push({
-          type: "skill",
-          order_index: idx++,
-          entries: [{ payload: { groups: skillGroups }, order_index: 0, bullets: [] }],
-        });
-      }
-
-      if (data.achievements.length > 0) {
-        sections.push({
-          type: "achievement",
-          order_index: idx++,
-          entries: data.achievements.map((e, i) => ({ ...e, order_index: i })),
-        });
-      }
-
-      const payload = {
-        title: data.title,
-        contact: data.contact,
-        sections,
-      };
-
-      const res = await resumeApi.create(payload);
-      const resumeId = res.data.id;
-      router.push(`/builder/${resumeId}/score`);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       setError(e.response?.data?.detail || "Failed to save resume.");
@@ -278,7 +307,7 @@ export default function NewResumeBuilder() {
         <div className="container" style={{ padding: "2rem 1.5rem", maxWidth: "760px" }}>
           {/* ── Step 0: Contact ── */}
           {step === 0 && (
-            <div className="animate-fade-in">
+            <div >
               <SectionHeader title="Contact information" hint="This appears at the top of your resume. No icons or images." />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem" }}>
                 <div className="form-group" style={{ gridColumn: "1/-1" }}>
@@ -317,7 +346,7 @@ export default function NewResumeBuilder() {
 
           {/* ── Step 1: Education ── */}
           {step === 1 && (
-            <div className="animate-fade-in">
+            <div >
               <SectionHeader
                 title="Education"
                 hint="List your most recent degree first. Dates should use the format 'Aug 2024' or 'May 2026'."
@@ -375,7 +404,7 @@ export default function NewResumeBuilder() {
 
           {/* ── Step 2: Experience ── */}
           {step === 2 && (
-            <div className="animate-fade-in">
+            <div >
               <SectionHeader
                 title="Work experience"
                 hint="Write 2-4 bullets per role. Start each bullet with an action verb (past tense). Use the AI assistant to improve weak bullets."
@@ -386,7 +415,9 @@ export default function NewResumeBuilder() {
                   index={i}
                   register={register}
                   control={control}
+                  watch={watch}
                   onRemove={() => expFields.remove(i)}
+                  ensureDraftResume={ensureDraftResume}
                 />
               ))}
               <button
@@ -408,7 +439,7 @@ export default function NewResumeBuilder() {
 
           {/* ── Step 3: Projects ── */}
           {step === 3 && (
-            <div className="animate-fade-in">
+            <div >
               <SectionHeader
                 title="Projects"
                 hint="Include 2-4 bullets per project with the tech stack used and what you measured."
@@ -419,7 +450,9 @@ export default function NewResumeBuilder() {
                   index={i}
                   register={register}
                   control={control}
+                  watch={watch}
                   onRemove={() => projFields.remove(i)}
+                  ensureDraftResume={ensureDraftResume}
                 />
               ))}
               <button
@@ -441,7 +474,7 @@ export default function NewResumeBuilder() {
 
           {/* ── Step 4: Skills ── */}
           {step === 4 && (
-            <div className="animate-fade-in">
+            <div >
               <SectionHeader
                 title="Skills"
                 hint="List only skills you can actually demonstrate. Separate items with commas. Don't add skills you don't have."
@@ -470,7 +503,7 @@ export default function NewResumeBuilder() {
 
           {/* ── Step 5: Achievements ── */}
           {step === 5 && (
-            <div className="animate-fade-in">
+            <div >
               <SectionHeader title="Achievements & certifications" hint="Optional. Include relevant certifications, awards, or publications." />
               {achFields.fields.map((field, i) => (
                 <div key={field.id} className="card" style={{ marginBottom: "1rem" }}>
@@ -513,7 +546,7 @@ export default function NewResumeBuilder() {
 
           {/* ── Step 6: Job Description ── */}
           {step === 6 && (
-            <div className="animate-fade-in">
+            <div >
               <SectionHeader
                 title="Job description (optional)"
                 hint="Paste the full job description. The app extracts keywords and shows overlap. This does not generate your resume; you do."
@@ -596,24 +629,36 @@ function BulletsField({
   nestPath,
   register,
   control,
+  watch,
   resumeId,
+  ensureDraftResume,
   context,
 }: {
   nestPath: string;
   register: UseFormRegister<FormData>;
   control: Control<FormData>;
+  watch: UseFormWatch<FormData>;
   resumeId?: string;
+  ensureDraftResume?: () => Promise<string>;
   context?: string;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: nestPath as `experience.${number}.bullets` });
   const [improving, setImproving] = useState<Record<number, boolean>>({});
+  const [improveErrors, setImproveErrors] = useState<Record<number, string>>({});
   const [improvements, setImprovements] = useState<Record<number, { text: string; flags: string[]; question?: string }>>({});
 
   async function handleImprove(i: number, rawText: string) {
-    if (!resumeId || !rawText) return;
+    const text = rawText.trim();
+    if (!text) {
+      setImproveErrors((prev) => ({ ...prev, [i]: "Write a bullet first, then click Improve." }));
+      return;
+    }
     setImproving((prev) => ({ ...prev, [i]: true }));
+    setImproveErrors((prev) => ({ ...prev, [i]: "" }));
     try {
-      const res = await bulletApi.improve(resumeId, rawText, context);
+      const id = resumeId ?? (ensureDraftResume ? await ensureDraftResume() : undefined);
+      if (!id) return;
+      const res = await bulletApi.improve(id, text, context);
       const data = res.data;
       setImprovements((prev) => ({
         ...prev,
@@ -622,6 +667,15 @@ function BulletsField({
           flags: data.flags || [],
           question: data.metric_question,
         },
+      }));
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      setImproveErrors((prev) => ({
+        ...prev,
+        [i]:
+          typeof e.response?.data?.detail === "string"
+            ? e.response.data.detail
+            : "Couldn't reach the AI assistant. Check your connection and try again.",
       }));
     } finally {
       setImproving((prev) => ({ ...prev, [i]: false }));
@@ -633,7 +687,10 @@ function BulletsField({
       <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>
         Bullets (2-4)
       </div>
-      {fields.map((f, i) => (
+      {fields.map((f, i) => {
+        const rawText =
+          (watch as unknown as (name: string) => string | undefined)(`${nestPath}.${i}.raw_text`) ?? "";
+        return (
         <div key={f.id} style={{ marginBottom: "0.625rem" }}>
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
             <textarea
@@ -653,13 +710,28 @@ function BulletsField({
               </button>
             </div>
           </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", marginTop: "0.375rem" }}>
+            {improveErrors[i] ? (
+              <span className="form-error" style={{ fontSize: "0.78rem" }}>{improveErrors[i]}</span>
+            ) : (
+              <span />
+            )}
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              disabled={!!improving[i]}
+              onClick={() => handleImprove(i, rawText)}
+            >
+              {improving[i] ? "Improving..." : "Improve with AI"}
+            </button>
+          </div>
           {improvements[i] && (
             <div
               style={{
                 marginTop: "0.5rem",
                 padding: "0.75rem",
                 background: "var(--bg-elevated)",
-                borderRadius: 8,
+                borderRadius: 4,
                 border: "1px solid var(--bg-border)",
                 fontSize: "0.825rem",
               }}
@@ -690,7 +762,8 @@ function BulletsField({
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
       <div style={{ display: "flex", gap: "0.5rem" }}>
         <button
           type="button"
@@ -708,12 +781,16 @@ function ExperienceCard({
   index,
   register,
   control,
+  watch,
   onRemove,
+  ensureDraftResume,
 }: {
   index: number;
   register: UseFormRegister<FormData>;
   control: Control<FormData>;
+  watch: UseFormWatch<FormData>;
   onRemove: () => void;
+  ensureDraftResume: () => Promise<string>;
 }) {
   return (
     <div className="card" style={{ marginBottom: "1rem" }}>
@@ -747,6 +824,8 @@ function ExperienceCard({
         nestPath={`experience.${index}.bullets`}
         register={register}
         control={control}
+        watch={watch}
+        ensureDraftResume={ensureDraftResume}
         context="experience"
       />
     </div>
@@ -757,12 +836,16 @@ function ProjectCard({
   index,
   register,
   control,
+  watch,
   onRemove,
+  ensureDraftResume,
 }: {
   index: number;
   register: UseFormRegister<FormData>;
   control: Control<FormData>;
+  watch: UseFormWatch<FormData>;
   onRemove: () => void;
+  ensureDraftResume: () => Promise<string>;
 }) {
   return (
     <div className="card" style={{ marginBottom: "1rem" }}>
@@ -796,6 +879,8 @@ function ProjectCard({
         nestPath={`projects.${index}.bullets`}
         register={register}
         control={control}
+        watch={watch}
+        ensureDraftResume={ensureDraftResume}
         context="project"
       />
     </div>

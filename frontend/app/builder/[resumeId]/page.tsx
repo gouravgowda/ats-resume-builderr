@@ -69,7 +69,7 @@ export default function EditResumePage() {
             style={{
               background: "var(--bg-elevated)",
               border: "1px solid var(--bg-border)",
-              borderRadius: 8,
+              borderRadius: 4,
               padding: "1rem",
               fontSize: "0.75rem",
               textAlign: "left",

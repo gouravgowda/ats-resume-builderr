@@ -1,13 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="7" fill="#0078D4"/>
-  <!-- Document icon -->
-  <rect x="8" y="6" width="16" height="20" rx="2" fill="#ffffff"/>
-  <line x1="11" y1="11" x2="21" y2="11" stroke="#eca20a" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="11" y1="14" x2="21" y2="14" stroke="#94a3b8" stroke-width="1" stroke-linecap="round"/>
-  <line x1="11" y1="17" x2="17" y2="17" stroke="#94a3b8" stroke-width="1" stroke-linecap="round"/>
-  <line x1="11" y1="20" x2="19" y2="20" stroke="#94a3b8" stroke-width="1" stroke-linecap="round"/>
-  <!-- Checkmark badge -->
-  <circle cx="22" cy="22" r="6" fill="#ffffff"/>
-  <circle cx="22" cy="22" r="5" fill="#22c55e"/>
-  <polyline points="19,22 21,24 25,20" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="1.5" y="1.5" width="29" height="29" rx="4" fill="#FBF9F3" stroke="#1C1B17" stroke-width="2.5"/>
+  <path d="M16 8.5 L9 23.5 M16 8.5 L23 23.5" stroke="#1C1B17" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M11.5 19 H20.5" stroke="#1E5B3E" stroke-width="2.6" stroke-linecap="round"/>
 </svg>

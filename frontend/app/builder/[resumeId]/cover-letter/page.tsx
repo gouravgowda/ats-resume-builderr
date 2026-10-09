@@ -175,7 +175,7 @@ export default function CoverLetterPage() {
 
         {/* ── Generated Result ── */}
         {result && (
-          <div className="card animate-fade-in" style={{ marginBottom: "1.5rem" }}>
+          <div className="card" style={{ marginBottom: "1.5rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem", flexWrap: "wrap", gap: "0.75rem" }}>
               <div>
                 <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.25rem" }}>
@@ -211,7 +211,7 @@ export default function CoverLetterPage() {
             <div
               style={{
                 background: "var(--bg-elevated)",
-                borderRadius: 8,
+                borderRadius: 4,
                 padding: "1.25rem",
                 border: "1px solid var(--bg-border)",
                 whiteSpace: "pre-wrap",
@@ -233,7 +233,7 @@ export default function CoverLetterPage() {
           </p>
 
           {loadingPrevious ? (
-            <div className="skeleton" style={{ height: "60px", borderRadius: 8 }} />
+            <div className="skeleton" style={{ height: "60px", borderRadius: 4 }} />
           ) : previousLetters.length === 0 ? (
             <p style={{ fontSize: "0.825rem", color: "var(--text-muted)", fontStyle: "italic" }}>
               No cover letters generated yet. Use the form above to create one.
@@ -280,7 +280,7 @@ function PreviousCoverLetter({
     <div
       style={{
         background: "var(--bg-elevated)",
-        borderRadius: 8,
+        borderRadius: 4,
         padding: "0.875rem",
         border: "1px solid var(--bg-border)",
       }}
@@ -308,7 +308,7 @@ function PreviousCoverLetter({
       </div>
       {expanded && (
         <div
-          className="animate-fade-in"
+          
           style={{
             marginTop: "0.75rem",
             whiteSpace: "pre-wrap",

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { resumeApi } from "@/lib/api";
 import { useRequireAuth, logout } from "@/lib/auth";
+import { LogoMark } from "@/components/LogoMark";
 
 interface ResumeSummary {
   id: string;
@@ -161,7 +162,8 @@ export default function DashboardPage() {
           }}
         >
           <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.25rem" }}>
+            <span className="kicker" style={{ marginBottom: "0.5rem" }}>Dashboard</span>
+            <h1 style={{ fontSize: "1.75rem", marginBottom: "0.25rem" }}>
               Your resumes
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>
@@ -205,35 +207,17 @@ export default function DashboardPage() {
         </div>
 
         {loading || authLoading ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
+          <div style={{ borderTop: "1px solid var(--bg-border)" }}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="card skeleton" style={{ height: "140px" }} />
+              <div key={i} className="skeleton" style={{ height: "64px", marginTop: "0.75rem" }} />
             ))}
           </div>
         ) : resumes.length === 0 ? (
-          <div className="card" style={{ textAlign: "center", padding: "3rem", maxWidth: "440px", margin: "0 auto" }}>
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 12,
-                background: "var(--accent-glow)",
-                border: "1px solid rgba(0,120,212,0.2)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 1rem",
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
-              </svg>
-            </div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.5rem" }}>No resumes yet</h3>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", marginBottom: "1.25rem" }}>
-              Build your first ATS-parseable resume.
+          <div style={{ borderTop: "2px solid var(--ink)", paddingTop: "2.5rem", maxWidth: "480px" }}>
+            <p className="mono-label" style={{ marginBottom: "0.75rem" }}>No resumes yet</p>
+            <h3 style={{ fontSize: "1.35rem", fontWeight: 600, marginBottom: "0.5rem", fontFamily: "var(--font-serif)" }}>Start with a blank page or an import.</h3>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem", lineHeight: 1.6 }}>
+              Build a single-column resume, run the parse check, then score it against a job post.
             </p>
             <Link href="/builder/new" className="btn btn-primary" style={{ justifyContent: "center" }}>
               Create resume
@@ -265,9 +249,9 @@ export default function DashboardPage() {
                   style={{
                     width: "100%",
                     padding: "0.5rem 0.75rem 0.5rem 2.25rem",
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--bg-border)",
-                    borderRadius: "0.5rem",
+                    background: "#FFFDF7",
+                    border: "1px solid #D3CCB4",
+                    borderRadius: "3px",
                     color: "var(--text-primary)",
                     fontSize: "0.875rem",
                     outline: "none",
@@ -293,19 +277,24 @@ export default function DashboardPage() {
             ) : (
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                  gap: "1rem",
+                  borderTop: "1px solid var(--bg-border)",
                 }}
               >
                 {filtered.map((r) => (
                   <div
                     key={r.id}
-                    className="card animate-fade-in"
-                    style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "1rem" }}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: "1rem",
+                      padding: "0.875rem 0.25rem",
+                      borderBottom: "1px solid var(--bg-border)",
+                      flexWrap: "wrap",
+                    }}
                   >
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                    <div style={{ minWidth: 0, flex: "1 1 220px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem" }}>
                         {editingTitleId === r.id ? (
                           <input
                             ref={titleInputRef}
@@ -316,21 +305,20 @@ export default function DashboardPage() {
                             onKeyDown={handleTitleKeyDown}
                             style={{
                               fontSize: "0.95rem",
-                              fontWeight: 700,
-                              lineHeight: 1.3,
-                              background: "var(--bg-base)",
-                              border: "1px solid var(--accent)",
-                              borderRadius: "0.25rem",
+                              fontWeight: 600,
+                              background: "#FFFDF7",
+                              border: "1px solid var(--ink)",
+                              borderRadius: "3px",
                               color: "var(--text-primary)",
                               padding: "0.125rem 0.375rem",
                               outline: "none",
                               width: "100%",
-                              minWidth: 0,
+                              maxWidth: "320px",
                             }}
                           />
                         ) : (
                           <h3
-                            style={{ fontSize: "0.95rem", fontWeight: 700, lineHeight: 1.3, cursor: "pointer" }}
+                            style={{ fontSize: "0.95rem", fontWeight: 600, lineHeight: 1.3, cursor: "pointer", fontFamily: "var(--font-sans)" }}
                             onClick={() => startRename(r)}
                             title="Click to rename"
                           >
@@ -341,11 +329,11 @@ export default function DashboardPage() {
                           <span className="badge badge-accent" style={{ flexShrink: 0 }}>Tailored</span>
                         )}
                       </div>
-                      <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                      <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
                         Updated {formatDate(r.updated_at)}
                       </p>
                     </div>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", gap: "0.375rem", alignItems: "center", flexWrap: "wrap" }}>
                       <Link
                         href={`/builder/${r.id}`}
                         className="btn btn-secondary btn-sm"
@@ -365,7 +353,7 @@ export default function DashboardPage() {
                         className="btn btn-ghost btn-sm"
                         id={`cover-letter-resume-${r.id}`}
                       >
-                        Cover Letter
+                        Cover letter
                       </Link>
                       <button
                         className="btn btn-ghost btn-sm"
@@ -386,7 +374,6 @@ export default function DashboardPage() {
                         id={`delete-resume-${r.id}`}
                         onClick={() => handleDelete(r.id)}
                         disabled={deletingId === r.id}
-                        style={{ marginLeft: "auto" }}
                       >
                         {deletingId === r.id ? "..." : "Delete"}
                       </button>
@@ -411,8 +398,7 @@ export function AppNav() {
     <nav
       style={{
         borderBottom: "1px solid var(--bg-border)",
-        background: "#ffffff",
-        boxShadow: "0 0 2px 0 rgb(121 121 121 / 50%)",
+        background: "var(--bg-base)",
         position: "sticky",
         top: 0,
         zIndex: 50,
@@ -420,20 +406,14 @@ export function AppNav() {
     >
       <div
         className="container"
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "56px" }}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "60px" }}
       >
         <Link
           href="/dashboard"
           style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none" }}
         >
-          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <rect x="2" y="2" width="28" height="28" rx="6" fill="#0078D4"/>
-            <rect x="7" y="5" width="18" height="22" rx="2" fill="#ffffff"/>
-            <line x1="10" y1="10" x2="22" y2="10" stroke="#eca20a" strokeWidth="1.5" strokeLinecap="round"/>
-            <line x1="10" y1="13.5" x2="22" y2="13.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round"/>
-            <line x1="10" y1="17" x2="18" y2="17" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round"/>
-          </svg>
-          <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-primary)" }}>ATS Builder</span>
+          <LogoMark size={24} />
+          <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: "1.05rem", color: "var(--text-primary)" }}>ATS Builder</span>
         </Link>
         <button onClick={handleLogout} className="btn btn-ghost btn-sm" id="logout-btn">
           Sign out

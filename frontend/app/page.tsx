@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { LogoMark } from "@/components/LogoMark";
 
 const API_DOCS_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/docs`;
 
@@ -22,12 +23,11 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
 
-      {/* ── Navigation ── */}
+      {/* ── Masthead ── */}
       <nav
         style={{
           borderBottom: "1px solid var(--bg-border)",
-          background: "#ffffff",
-          boxShadow: "0 0 2px 0 rgb(121 121 121 / 50%)",
+          background: "var(--bg-base)",
           position: "sticky",
           top: 0,
           zIndex: 50,
@@ -39,19 +39,19 @@ export default function HomePage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: "56px",
+            height: "60px",
           }}
         >
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none" }}>
             <LogoMark />
-            <span style={{ fontWeight: 700, fontSize: "1rem", color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+            <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: "1.05rem", color: "var(--text-primary)" }}>
               ATS Builder
             </span>
           </Link>
           <div className="landing-nav-links">
-            <NavAnchor href="#features">Features</NavAnchor>
-            <NavAnchor href="#how-it-works">How it works</NavAnchor>
-            <NavAnchor href="#sample">Sample output</NavAnchor>
+            <NavAnchor href="#parse">Parse check</NavAnchor>
+            <NavAnchor href="#score">Score</NavAnchor>
+            <NavAnchor href="#features">Toolkit</NavAnchor>
             <NavAnchor href="#faq">FAQ</NavAnchor>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
@@ -75,285 +75,294 @@ export default function HomePage() {
 
       <main>
         {/* ── Hero ── */}
-        <section style={{ padding: "4rem 0 3.5rem", background: "var(--bg-elevated)" }}>
+        <section style={{ padding: "4.5rem 0 3.5rem" }}>
           <div className="container landing-hero">
             <div>
+              <span className="kicker" style={{ marginBottom: "1.25rem" }}>
+                A tool that shows its work
+              </span>
               <h1
                 style={{
-                  fontSize: "clamp(2rem, 4.5vw, 3rem)",
-                  fontWeight: 800,
+                  fontFamily: "var(--font-serif)",
+                  fontSize: "clamp(2.1rem, 4.5vw, 3.1rem)",
+                  fontWeight: 600,
                   color: "var(--text-primary)",
-                  lineHeight: 1.12,
-                  marginBottom: "1.125rem",
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.015em",
+                  marginBottom: "1.25rem",
                 }}
               >
-                A resume that passes the parser{" "}
-                <span style={{ color: "var(--accent)" }}>before</span> it
-                reaches a human.
+                A resume that passes the{" "}
+                <em style={{ fontStyle: "italic", fontWeight: 500, color: "var(--accent)" }}>
+                  parser
+                </em>{" "}
+                before it reaches a human.
               </h1>
               <p
                 style={{
-                  fontSize: "1.05rem",
+                  fontSize: "1.02rem",
                   color: "var(--text-secondary)",
                   lineHeight: 1.7,
-                  marginBottom: "0.75rem",
-                  maxWidth: "540px",
+                  marginBottom: "1.75rem",
+                  maxWidth: "520px",
                 }}
               >
                 Write your experience once. ATS Builder renders a clean
-                single-column PDF, re-reads the file to prove every section
-                survived, and scores it against the job you are applying for.
+                single-column PDF, reads the finished file back to prove every
+                section survived, and scores it against the job description you
+                are targeting.
               </p>
-              <p
-                style={{
-                  fontSize: "0.85rem",
-                  color: "var(--text-muted)",
-                  marginBottom: "1.75rem",
-                }}
-              >
-                No account needed to look around. Export requires a free sign-in.
-              </p>
-              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
                 <Link
                   href={user ? "/dashboard" : "/auth/register"}
                   className="btn btn-primary btn-lg"
                 >
                   {user ? "Open dashboard" : "Build my resume"}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
+                  <span className="btn-arrow">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </span>
                 </Link>
-                <Link href="#sample" className="btn btn-secondary btn-lg">
-                  See a sample score
+                <Link href="#score" className="btn btn-secondary btn-lg">
+                  See the score breakdown
                 </Link>
               </div>
+              <p className="mono-label" style={{ letterSpacing: "0.12em" }}>
+                Free while in development · PDF + DOCX export · Data in your own Firebase project
+              </p>
             </div>
 
-            {/* Product visual: rendered resume + verification card */}
-            <div style={{ position: "relative" }} aria-label="Preview of a generated resume and its verification result">
+            {/* Artifact: the parse ledger */}
+            <div
+              style={{ maxWidth: 440, marginLeft: "auto", width: "100%" }}
+              aria-label="Sample parse ledger: five sections passed, 98 percent parse accuracy"
+            >
               <div
-                className="card"
                 style={{
-                  background: "#f8fafc",
-                  borderColor: "var(--bg-border)",
-                  borderRadius: 10,
-                  padding: "1.5rem 1.5rem 1.75rem",
-                  maxWidth: 420,
-                  marginLeft: "auto",
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--bg-border)",
+                  borderTop: "2px solid var(--ink)",
+                  borderRadius: 4,
+                  padding: "1.25rem 1.25rem 1.5rem",
                 }}
               >
-                <p style={{ color: "#0f172a", fontWeight: 800, fontSize: "1.05rem", textAlign: "center", letterSpacing: "-0.01em" }}>
-                  Prabhakar
-                </p>
-                <p style={{ color: "#475569", fontSize: "0.68rem", textAlign: "center", marginTop: "0.15rem" }}>
-                  prabhakar@example.com · Bengaluru · linkedin.com/in/prabhakar
-                </p>
-                <div style={{ borderTop: "2px solid #0f172a", margin: "0.75rem 0 0.5rem" }} />
-                <p style={{ color: "#0f172a", fontWeight: 700, fontSize: "0.7rem", letterSpacing: "0.08em" }}>EXPERIENCE</p>
-                <p style={{ color: "#0f172a", fontWeight: 600, fontSize: "0.75rem", marginTop: "0.3rem" }}>
-                  Backend Intern, Northwind Labs <span style={{ fontWeight: 400, color: "#475569" }}>· Jun 2024 to Aug 2024</span>
-                </p>
-                <ul style={{ color: "#334155", fontSize: "0.72rem", lineHeight: 1.55, marginTop: "0.25rem", paddingLeft: "1rem" }}>
-                  <li>Built a FastAPI endpoint serving 12,000 daily requests, cutting response time by 34%.</li>
-                  <li>Added pytest coverage for 40 endpoints, reducing regressions from 9 to 2 per release.</li>
-                </ul>
-                <p style={{ color: "#0f172a", fontWeight: 700, fontSize: "0.7rem", letterSpacing: "0.08em", marginTop: "0.6rem" }}>SKILLS</p>
-                <p style={{ color: "#334155", fontSize: "0.72rem", marginTop: "0.2rem" }}>
-                  Python, FastAPI, PostgreSQL, Docker, pytest
-                </p>
-              </div>
-              <div
-                className="card"
-                style={{
-                  position: "absolute",
-                  right: -6,
-                  bottom: -24,
-                  padding: "0.75rem 1rem",
-                  borderRadius: 10,
-                  border: "1px solid rgba(0,120,212,0.35)",
-                  background: "var(--bg-elevated)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
-                }}
-              >
-                <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--accent)" }}>87</span>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                  Overall score<br />
-                  <span style={{ color: "var(--success)" }}>Parse check passed · 98%</span>
-                </span>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    paddingBottom: "0.625rem",
+                    borderBottom: "1px solid var(--ink)",
+                  }}
+                >
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink)" }}>
+                    PARSE LEDGER
+                  </span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
+                    NO. 1042-A
+                  </span>
+                </div>
+
+                <div style={{ marginTop: "0.5rem" }}>
+                  <LedgerRow label="Contact block" value={<Stamp>Pass</Stamp>} />
+                  <LedgerRow label="Education" value={<Stamp>Pass</Stamp>} />
+                  <LedgerRow label="Experience" value={<Stamp>Pass</Stamp>} />
+                  <LedgerRow label="Skills" value={<Stamp>Pass</Stamp>} />
+                  <LedgerRow label="Section order" value={<Stamp>Pass</Stamp>} />
+                  <LedgerRow label="Tables, images, icons" value={<Stamp tone="none">None</Stamp>} />
+                </div>
+
+                <div style={{ borderTop: "1px solid var(--bg-border)", marginTop: "0.5rem", paddingTop: "0.5rem" }}>
+                  <LedgerRow
+                    label="Parse accuracy"
+                    value={<span style={{ fontFamily: "var(--font-mono)", fontSize: "0.9rem", fontWeight: 600, color: "var(--ink)" }}>98%</span>}
+                  />
+                  <LedgerRow
+                    label="Keyword coverage"
+                    value={<span style={{ fontFamily: "var(--font-mono)", fontSize: "0.9rem", fontWeight: 600, color: "var(--ink)" }}>24 / 31</span>}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── Trust strip ── */}
-        <section style={{ padding: "0 0 1rem" }}>
+        {/* ── Quiet strip ── */}
+        <section style={{ padding: "0 0 0.5rem" }}>
           <div className="container">
             <div
+              className="mono-label"
               style={{
                 display: "flex",
                 flexWrap: "wrap",
                 gap: "0.5rem 1.75rem",
                 justifyContent: "center",
-                padding: "1rem 0",
+                padding: "0.875rem 0",
                 borderTop: "1px solid var(--bg-border)",
                 borderBottom: "1px solid var(--bg-border)",
-                fontSize: "0.82rem",
-                color: "var(--text-secondary)",
+                letterSpacing: "0.1em",
               }}
             >
               <span>Open source, self-hostable with Docker</span>
-              <span>Your data stays in your own Firebase project</span>
               <span>Deterministic scoring, no black box</span>
-              <span>PDF and DOCX export</span>
+              <span>Every run saved to score history</span>
+              <span>Import your existing PDF</span>
             </div>
           </div>
         </section>
 
-        {/* ── Features ── */}
-        <section id="features" style={{ padding: "3.5rem 0 1rem", scrollMarginTop: "70px" }}>
-          <div className="container">
-            <SectionHeading
-              eyebrow="What it does"
-              title="Everything between blank page and submitted application"
-            />
+        {/* ── 01 · Parse check ── */}
+        <section id="parse" style={{ padding: "3.5rem 0", borderTop: "1px solid var(--bg-border)", scrollMarginTop: "80px" }}>
+          <div className="container" style={{ maxWidth: "820px" }}>
+            <IndexHeading number="01" title="The PDF is read back before anyone else reads it" />
+            <div style={{ display: "grid", gap: "1.75rem", gridTemplateColumns: "1fr" }}>
+              <div>
+                <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: "1rem" }}>
+                  Export runs a headless browser, so the PDF carries real
+                  selectable text — single column, no tables, no icons, no
+                  flattened images. The finished file is then fed through a text
+                  extractor, the same class of tool an ATS uses, and the
+                  extracted text is compared section by section against what you
+                  typed.
+                </p>
+                <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: 1.75 }}>
+                  If accuracy comes back under 95%, export stays blocked and the
+                  report names the section that broke. Fix it, re-run, export
+                  when it passes. Nothing about the check is hidden — the
+                  accuracy number and the diff are shown every time.
+                </p>
+              </div>
+              <div
+                style={{
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--bg-border)",
+                  borderRadius: 4,
+                  padding: "1rem 1.25rem",
+                }}
+              >
+                <p className="mono-label" style={{ letterSpacing: "0.14em", marginBottom: "0.625rem" }}>
+                  Checked on every export
+                </p>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <Stamp>Contact</Stamp>
+                  <Stamp>Education</Stamp>
+                  <Stamp>Experience</Stamp>
+                  <Stamp>Skills</Stamp>
+                  <Stamp>Order</Stamp>
+                  <Stamp>Dates</Stamp>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── 02 · Score ── */}
+        <section id="score" style={{ padding: "3.5rem 0", borderTop: "1px solid var(--bg-border)", scrollMarginTop: "80px" }}>
+          <div className="container" style={{ maxWidth: "820px" }}>
+            <IndexHeading number="02" title="A score you can check line by line" />
+            <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: "1.75rem" }}>
+              Paste a job description and the total becomes a weighted check of
+              five things. Every number traces back to a rule you can read, and
+              every run is saved so you can watch the total move as you fix
+              issues.
+            </p>
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                gap: "1rem",
+                background: "var(--bg-surface)",
+                border: "1px solid var(--bg-border)",
+                borderRadius: 4,
+                padding: "1.25rem 1.25rem 1rem",
               }}
             >
-              {FEATURES.map((f) => (
-                <div key={f.title} className="card">
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 8,
-                      background: "var(--accent-glow)",
-                      border: "1px solid rgba(0,120,212,0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: "0.875rem",
-                    }}
-                  >
-                    <f.Icon size={18} color="var(--accent)" />
-                  </div>
-                  <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.4rem", color: "var(--text-primary)" }}>
-                    {f.title}
-                  </h3>
-                  <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                    {f.description}
-                  </p>
-                </div>
-              ))}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  paddingBottom: "0.625rem",
+                  borderBottom: "1px solid var(--ink)",
+                }}
+              >
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink)" }}>
+                  SAMPLE RUN
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", fontWeight: 600, color: "var(--ink)" }}>
+                  TOTAL 88 / 100
+                </span>
+              </div>
+              <div style={{ marginTop: "0.5rem" }}>
+                {SAMPLE_SCORES.map((s) => (
+                  <LedgerRow
+                    key={s.label}
+                    label={
+                      <>
+                        {s.label}{" "}
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--text-muted)" }}>
+                          ({s.weight})
+                        </span>
+                      </>
+                    }
+                    value={
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.875rem", fontWeight: 600, color: "var(--ink)" }}>
+                        {s.value}%
+                      </span>
+                    }
+                  />
+                ))}
+              </div>
             </div>
+            <p className="mono-label" style={{ marginTop: "1rem", lineHeight: 1.7 }}>
+              The score measures the document — parseability and keyword overlap — not your odds with any employer.
+            </p>
           </div>
         </section>
 
-        {/* ── How it works ── */}
-        <section id="how-it-works" style={{ padding: "3.5rem 0 1rem", scrollMarginTop: "70px" }}>
-          <div className="container" style={{ maxWidth: "860px" }}>
-            <SectionHeading
-              eyebrow="How it works"
-              title="Three steps, about fifteen minutes"
-            />
+        {/* ── 03 · Toolkit ── */}
+        <section id="features" style={{ padding: "3.5rem 0", borderTop: "1px solid var(--bg-border)", scrollMarginTop: "80px" }}>
+          <div className="container" style={{ maxWidth: "820px" }}>
+            <IndexHeading number="03" title="The rest of the toolkit" />
+            <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: "1.5rem" }}>
+              One example first. A weak bullet goes in, an honest one comes out —
+              the rewriter starts with an action verb and asks you for the
+              number when a metric is missing. It never invents one.
+            </p>
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: "1rem",
+                background: "var(--bg-surface)",
+                border: "1px solid var(--bg-border)",
+                borderLeft: "2px solid var(--ink)",
+                borderRadius: 4,
+                padding: "1.25rem",
+                marginBottom: "2rem",
               }}
             >
-              {STEPS.map((s, i) => (
-                <div key={s.title} className="card">
-                  <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.08em" }}>
-                    STEP {i + 1}
-                  </span>
-                  <h3 style={{ fontSize: "0.95rem", fontWeight: 700, margin: "0.4rem 0", color: "var(--text-primary)" }}>
-                    {s.title}
-                  </h3>
-                  <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                    {s.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── Sample output ── */}
-        <section id="sample" style={{ padding: "3.5rem 0 1rem", scrollMarginTop: "70px" }}>
-          <div className="container" style={{ maxWidth: "860px" }}>
-            <SectionHeading
-              eyebrow="Sample output"
-              title="What the checker actually tells you"
-            />
-            <div className="card" style={{ marginBottom: "1rem" }}>
-              <span className="badge badge-accent" style={{ marginBottom: "0.75rem", display: "inline-flex" }}>
-                Bullet rewrite
-              </span>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.4rem" }}>Before</p>
-              <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "1rem", textDecoration: "line-through", textDecorationColor: "var(--error)" }}>
+              <p className="mono-label" style={{ letterSpacing: "0.14em", marginBottom: "0.375rem" }}>Before</p>
+              <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "1rem", textDecoration: "line-through", textDecorationColor: "var(--seal)" }}>
                 Responsible for working on backend APIs and helping reduce slow responses.
               </p>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.4rem" }}>After</p>
+              <p className="mono-label" style={{ letterSpacing: "0.14em", marginBottom: "0.375rem" }}>After</p>
               <p style={{ fontSize: "0.9rem", color: "var(--text-primary)", lineHeight: 1.65 }}>
                 Built a FastAPI endpoint serving 12,000 daily requests, cutting response time by 34%.
               </p>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
-                The rewriter starts every bullet with an action verb and asks you for the number when one is missing. It never invents metrics.
-              </p>
             </div>
-            <div className="card">
-              <span className="badge badge-accent" style={{ marginBottom: "0.75rem", display: "inline-flex" }}>
-                Score breakdown
-              </span>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-                {SAMPLE_SCORES.map((s) => (
-                  <div key={s.label}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", marginBottom: "0.25rem" }}>
-                      <span style={{ color: "var(--text-secondary)" }}>{s.label} <span style={{ color: "var(--text-muted)" }}>· {s.weight}</span></span>
-                      <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>{s.value}%</span>
-                    </div>
-                    <div className="progress-bar">
-                      <div className="progress-fill progress-fill-accent" style={{ width: `${s.value}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.875rem", lineHeight: 1.6 }}>
-                Every run is saved, so you can watch the total climb as you fix issues. The score measures parseability and keyword overlap, not your odds with any specific employer system.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Who it is for ── */}
-        <section style={{ padding: "3.5rem 0 1rem" }}>
-          <div className="container" style={{ maxWidth: "860px" }}>
-            <SectionHeading
-              eyebrow="Who it is for"
-              title="Built for people applying right now"
-            />
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: "1rem",
-              }}
-            >
-              {AUDIENCES.map((a) => (
-                <div key={a.title} className="card">
-                  <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.4rem", color: "var(--text-primary)" }}>
-                    {a.title}
+            <div>
+              {TOOLKIT.map((item) => (
+                <div
+                  key={item.title}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(150px, 220px) 1fr",
+                    gap: "0.25rem 1.75rem",
+                    padding: "0.875rem 0",
+                    borderTop: "1px solid var(--bg-border)",
+                  }}
+                >
+                  <h3 style={{ fontFamily: "var(--font-serif)", fontSize: "0.95rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                    {item.title}
                   </h3>
-                  <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                    {a.description}
+                  <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
+                    {item.description}
                   </p>
                 </div>
               ))}
@@ -362,12 +371,12 @@ export default function HomePage() {
         </section>
 
         {/* ── FAQ ── */}
-        <section id="faq" style={{ padding: "3.5rem 0 1rem", scrollMarginTop: "70px" }}>
+        <section id="faq" style={{ padding: "3.5rem 0", borderTop: "1px solid var(--bg-border)", scrollMarginTop: "80px" }}>
           <div className="container" style={{ maxWidth: "700px" }}>
-            <SectionHeading
-              eyebrow="FAQ"
-              title="Questions worth answering honestly"
-            />
+            <span className="kicker" style={{ marginBottom: "1rem" }}>FAQ</span>
+            <h2 style={{ fontSize: "clamp(1.35rem, 2.6vw, 1.75rem)", color: "var(--text-primary)", marginBottom: "1.5rem" }}>
+              Questions worth answering honestly
+            </h2>
             {FAQS.map((f) => (
               <details key={f.q} className="faq">
                 <summary>{f.q}</summary>
@@ -377,36 +386,44 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Final CTA ── */}
-        <section style={{ padding: "3.5rem 0 4rem" }}>
+        {/* ── Final note ── */}
+        <section style={{ padding: "3.5rem 0 4.5rem", borderTop: "1px solid var(--bg-border)" }}>
           <div className="container" style={{ maxWidth: "700px" }}>
             <div
               className="card"
               style={{
-                textAlign: "center",
-                padding: "2.5rem 1.5rem",
-                border: "1px solid rgba(0,120,212,0.3)",
+                borderTop: "2px solid var(--ink)",
+                padding: "2rem",
               }}
             >
-              <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem", color: "var(--text-primary)" }}>
+              <h2 style={{ fontSize: "1.5rem", marginBottom: "0.625rem", color: "var(--text-primary)" }}>
                 Check whether your resume survives a parser.
               </h2>
-              <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
-                Import your current PDF or start from scratch. First parse check takes about a minute.
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.925rem", marginBottom: "1.5rem", lineHeight: 1.7 }}>
+                Import your current PDF or start from scratch. The first parse
+                check takes about a minute.
               </p>
-              <Link href={user ? "/dashboard" : "/auth/register"} className="btn btn-primary btn-lg">
+              <p className="mono-label" style={{ letterSpacing: "0.1em", marginBottom: "1.5rem" }}>
+                01 Enter or import · 02 Verify and score · 03 Fix, tailor, export — about fifteen minutes
+              </p>
+              <Link href={user ? "/dashboard" : "/auth/register"} className="btn btn-primary">
                 {user ? "Open dashboard" : "Start free"}
+                <span className="btn-arrow">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </span>
               </Link>
             </div>
           </div>
         </section>
       </main>
 
-      {/* ── Footer ── */}
+      {/* ── Colophon footer ── */}
       <footer
         style={{
           borderTop: "1px solid var(--bg-border)",
-          padding: "2.5rem 0 1.5rem",
+          padding: "2.75rem 0 1.75rem",
           color: "var(--text-muted)",
           fontSize: "0.8rem",
         }}
@@ -416,26 +433,27 @@ export default function HomePage() {
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
                 <LogoMark />
-                <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>ATS Builder</span>
+                <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, color: "var(--text-primary)" }}>ATS Builder</span>
               </div>
               <p style={{ fontSize: "0.82rem", lineHeight: 1.6, maxWidth: "260px" }}>
                 Real selectable-text PDF resumes with parse-back verification.
               </p>
             </div>
             <nav aria-label="Product">
-              <p style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.8rem", marginBottom: "0.75rem" }}>PRODUCT</p>
-              <Link href="#features">Features</Link>
-              <Link href="#how-it-works">How it works</Link>
+              <p className="mono-label" style={{ letterSpacing: "0.14em", marginBottom: "0.75rem" }}>PRODUCT</p>
+              <Link href="#parse">Parse check</Link>
+              <Link href="#score">Score</Link>
+              <Link href="#features">Toolkit</Link>
               <Link href="#faq">FAQ</Link>
             </nav>
             <nav aria-label="Account">
-              <p style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.8rem", marginBottom: "0.75rem" }}>ACCOUNT</p>
+              <p className="mono-label" style={{ letterSpacing: "0.14em", marginBottom: "0.75rem" }}>ACCOUNT</p>
               <Link href="/dashboard">Dashboard</Link>
               <Link href="/auth/login">Sign in</Link>
               <Link href="/auth/register">Get started</Link>
             </nav>
             <nav aria-label="Resources">
-              <p style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.8rem", marginBottom: "0.75rem" }}>RESOURCES</p>
+              <p className="mono-label" style={{ letterSpacing: "0.14em", marginBottom: "0.75rem" }}>RESOURCES</p>
               <a href={API_DOCS_URL} target="_blank" rel="noopener noreferrer">API docs</a>
               <Link href="/builder/new">New resume</Link>
             </nav>
@@ -450,7 +468,7 @@ export default function HomePage() {
               borderTop: "1px solid var(--bg-border)",
             }}
           >
-            <span>ATS Builder · Demo project. Data is stored in your own Firebase project.</span>
+            <span>ATS Builder · Set in Fraunces and Inter.</span>
             <span>Scores measure parseability and keyword overlap, not hiring outcomes.</span>
           </div>
         </div>
@@ -472,19 +490,6 @@ const JSON_LD = {
 };
 
 // ── Bits ──────────────────────────────────────────────────────────────────────
-function LogoMark() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="2" y="2" width="28" height="28" rx="6" fill="#0078D4" />
-      <rect x="7" y="5" width="18" height="22" rx="2" fill="#ffffff" />
-      <line x1="10" y1="10" x2="22" y2="10" stroke="#eca20a" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="10" y1="13.5" x2="22" y2="13.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
-      <line x1="10" y1="17" x2="18" y2="17" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
-      <line x1="10" y1="20.5" x2="20" y2="20.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function NavAnchor({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
@@ -496,127 +501,35 @@ function NavAnchor({ href, children }: { href: string; children: React.ReactNode
   );
 }
 
-function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+function IndexHeading({ number, title }: { number: string; title: string }) {
   return (
-    <div style={{ marginBottom: "1.5rem" }}>
-      <span className="badge badge-accent" style={{ marginBottom: "0.75rem", display: "inline-flex" }}>
-        {eyebrow}
-      </span>
-      <h2 style={{ fontSize: "1.5rem", color: "var(--text-primary)" }}>{title}</h2>
+    <div className="index-heading" style={{ marginBottom: "1.5rem" }}>
+      <span className="index-number">{number}</span>
+      <h2 style={{ fontSize: "clamp(1.35rem, 2.6vw, 1.75rem)", color: "var(--text-primary)" }}>{title}</h2>
+    </div>
+  );
+}
+
+function Stamp({ children, tone = "pass" }: { children: React.ReactNode; tone?: "pass" | "none" }) {
+  if (tone === "none") {
+    return (
+      <span className="badge" style={{ color: "var(--text-muted)" }}>{children}</span>
+    );
+  }
+  return <span className="badge badge-success">{children}</span>;
+}
+
+function LedgerRow({ label, value }: { label: React.ReactNode; value: React.ReactNode }) {
+  return (
+    <div className="leader-row" style={{ padding: "0.4rem 0", borderBottom: "1px solid var(--bg-border)" }}>
+      <span style={{ fontSize: "0.82rem", color: "var(--text-primary)", whiteSpace: "nowrap" }}>{label}</span>
+      <span className="leader-fill" />
+      {value}
     </div>
   );
 }
 
 // ── Content data (all claims specific and true) ───────────────────────────────
-function FileTextIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-    </svg>
-  );
-}
-function CheckCircleIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  );
-}
-function SearchIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-function ZapIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
-}
-function DownloadIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="7 10 12 15 17 10" />
-      <line x1="12" y1="15" x2="12" y2="3" />
-    </svg>
-  );
-}
-function UploadIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="17 8 12 3 7 8" />
-      <line x1="12" y1="3" x2="12" y2="15" />
-    </svg>
-  );
-}
-
-const FEATURES = [
-  {
-    Icon: FileTextIcon,
-    title: "ATS-safe PDF export",
-    description:
-      "Single-column layout. No tables, images, icons, or text boxes. Selectable text, not a flattened image. Rendered with a headless browser.",
-  },
-  {
-    Icon: CheckCircleIcon,
-    title: "Parse-back verification",
-    description:
-      "The generated PDF is re-read immediately and diffed against your input. Export stays blocked until parse accuracy reaches 95%.",
-  },
-  {
-    Icon: SearchIcon,
-    title: "JD keyword scoring",
-    description:
-      "Paste a job description. The app extracts required skills, shows what is present or missing, and keeps a history of every run.",
-  },
-  {
-    Icon: ZapIcon,
-    title: "Bullet rewriting",
-    description:
-      "An LLM rewrites weak bullets into action-verb statements with measurable results. It never invents a number and asks you when a metric is missing.",
-  },
-  {
-    Icon: UploadIcon,
-    title: "PDF import",
-    description:
-      "Upload an existing resume. The text is extracted and structured into editable sections so you do not start from a blank page.",
-  },
-  {
-    Icon: DownloadIcon,
-    title: "Cover letters and DOCX",
-    description:
-      "Generate a tailored cover letter from your resume and the job post. Export the resume itself as PDF or DOCX from the same data.",
-  },
-];
-
-const STEPS = [
-  {
-    title: "Enter or import your history",
-    description:
-      "Fill in structured fields for education, experience, projects, and skills, or upload your current PDF and edit what it finds.",
-  },
-  {
-    title: "Verify and score",
-    description:
-      "Generate the PDF, run the parse-back check, then paste a job description to see keyword overlap and bullet-level issues.",
-  },
-  {
-    title: "Fix, tailor, export",
-    description:
-      "Rewrite weak bullets, save a tailored copy per application, generate a cover letter, and download PDF or DOCX.",
-  },
-];
-
 const SAMPLE_SCORES = [
   { label: "Parse quality", weight: "30%", value: 98 },
   { label: "Keyword match", weight: "30%", value: 80 },
@@ -625,21 +538,36 @@ const SAMPLE_SCORES = [
   { label: "Formatting", weight: "10%", value: 100 },
 ];
 
-const AUDIENCES = [
+const TOOLKIT = [
   {
-    title: "Students and freshers",
+    title: "ATS-safe PDF export",
     description:
-      "One page, standard headings, consistent dates. The completeness check tells you exactly which required field is missing.",
+      "Single-column layout with selectable text, rendered by a headless browser. Two templates: Clean and Minimal.",
   },
   {
-    title: "Experienced hires",
+    title: "PDF import",
     description:
-      "Duplicate a base resume per application, tailor keyword coverage per job post, and keep a score history for each version.",
+      "Upload an existing resume and the extracted text lands in editable sections, so you never start from a blank page.",
   },
   {
-    title: "Career switchers",
+    title: "Bullet rewriting",
     description:
-      "Project entries count alongside experience. The keyword gap list shows which target-role skills your bullets never mention.",
+      "An LLM turns weak bullets into action-verb statements with measurable results, and asks you when a metric is missing.",
+  },
+  {
+    title: "Tailored copies",
+    description:
+      "Duplicate a base resume per application, with its own keyword coverage and score history for each version.",
+  },
+  {
+    title: "Cover letters",
+    description:
+      "Generated from your resume and the job post, referencing only the information your resume actually contains.",
+  },
+  {
+    title: "DOCX export",
+    description:
+      "Built from the same structured data as the PDF, so the two files always agree.",
   },
 ];
 

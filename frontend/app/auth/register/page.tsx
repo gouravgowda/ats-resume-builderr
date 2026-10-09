@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { authApi } from "@/lib/api";
+import { LogoMark } from "@/components/LogoMark";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -57,14 +58,8 @@ export default function RegisterPage() {
       <div style={{ width: "100%", maxWidth: "400px" }}>
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-              <rect x="2" y="2" width="28" height="28" rx="6" fill="#0078D4"/>
-              <rect x="7" y="5" width="18" height="22" rx="2" fill="#ffffff"/>
-              <line x1="10" y1="10" x2="22" y2="10" stroke="#eca20a" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="10" y1="13.5" x2="22" y2="13.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round"/>
-              <line x1="10" y1="17" x2="18" y2="17" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round"/>
-            </svg>
-            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>ATS Builder</span>
+            <LogoMark size={28} />
+            <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, color: "var(--text-primary)" }}>ATS Builder</span>
           </Link>
           <h1 style={{ marginTop: "1.5rem", fontSize: "1.5rem", color: "var(--text-primary)" }}>Create an account</h1>
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", marginTop: "0.25rem" }}>

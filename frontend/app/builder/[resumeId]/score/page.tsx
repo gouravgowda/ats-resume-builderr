@@ -181,7 +181,7 @@ export default function ScorePage() {
           </div>
 
           {parseResult && (
-            <div className="animate-fade-in">
+            <div >
               <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginBottom: "0.875rem", flexWrap: "wrap" }}>
                 <span className={`badge ${parseResult.passed ? "badge-success" : "badge-error"}`}>
                   {parseResult.passed ? "Passed" : "Failed"}
@@ -309,7 +309,7 @@ export default function ScorePage() {
           {error && <div className="alert alert-error" style={{ marginTop: "0.75rem" }}>{error}</div>}
 
           {score && (
-            <div className="animate-fade-in" style={{ marginTop: "1.25rem" }}>
+            <div  style={{ marginTop: "1.25rem" }}>
               {/* Total score ring-like display */}
               <div
                 style={{
@@ -318,25 +318,24 @@ export default function ScorePage() {
                   gap: "1.25rem",
                   padding: "1rem 1.25rem",
                   background: "var(--bg-elevated)",
-                  borderRadius: 10,
+                  borderRadius: 4,
                   border: "1px solid var(--bg-border)",
                   marginBottom: "1.25rem",
                 }}
               >
                 <div
                   style={{
-                    width: 68,
-                    height: 68,
-                    borderRadius: "50%",
-                    border: `4px solid ${scoreColor}`,
+                    width: 72,
+                    height: 72,
+                    borderRadius: 3,
+                    border: `2px solid ${scoreColor}`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
-                    boxShadow: `0 0 18px ${scoreColor}33`,
                   }}
                 >
-                  <span style={{ fontSize: "1.25rem", fontWeight: 800, color: scoreColor }}>{totalPct}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "1.4rem", fontWeight: 600, color: scoreColor }}>{totalPct}</span>
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: "0.2rem" }}>
@@ -386,7 +385,7 @@ export default function ScorePage() {
                   const color = pct >= 75 ? "var(--success)" : pct >= 50 ? "var(--warning)" : "var(--error)";
                   const fillClass = pct >= 75 ? "progress-fill-success" : pct >= 50 ? "progress-fill-warning" : "progress-fill-error";
                   return (
-                    <div key={key} style={{ background: "var(--bg-elevated)", borderRadius: 8, padding: "0.875rem", border: "1px solid var(--bg-border)" }}>
+                    <div key={key} style={{ background: "var(--bg-elevated)", borderRadius: 4, padding: "0.875rem", border: "1px solid var(--bg-border)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                           <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{label}</span>
@@ -469,7 +468,7 @@ export default function ScorePage() {
             </button>
 
             {tailorResult && (
-              <div className="animate-fade-in" style={{ marginTop: "1rem" }}>
+              <div  style={{ marginTop: "1rem" }}>
                 <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "0.875rem" }}>
                   <div>
                     <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--success)", marginBottom: "0.375rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
